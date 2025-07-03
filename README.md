@@ -1,4 +1,4 @@
-# Smart Scales for M5Cardputer 🧠⚖️
+# Smart Scales for 🖥️ M5Cardputer ⚖️
 
 **Author:** [@ilalex](https://github.com/jean-louis1776)
 
