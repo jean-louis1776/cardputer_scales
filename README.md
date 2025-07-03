@@ -19,11 +19,10 @@ This project turns your **M5Cardputer** into a compact **digital smart scale** u
 
 ## 🧰 Hardware Requirements
 
-- [M5Cardputer](https://shop.m5stack.com/products/m5cardputer)
-- HX711 Load Cell Amplifier (e.g. from [Bogde's HX711 library](https://github.com/bogde/HX711))
-- Load cell sensor
+- M5Stack Cardputer [Buy](https://shop.m5stack.com/products/m5cardputer)
+- Mini Scales Unit (HX711) [Buy](https://shop.m5stack.com/products/mini-scales-unit-hx711)
 - microSD card (for saving settings)
-- Jumper wires
+- Grove cable
 
 ---
 
@@ -53,7 +52,7 @@ Make sure to install the following libraries via the Arduino Library Manager:
 | Key | Action |
 |-----|--------|
 | `R` | Tare (reset scale to zero) |
-| `S` / `Enter` | Open settings menu |
+| `S` | Open settings menu |
 | `↑ / ↓` | Navigate menu |
 | `Enter` | Confirm unit selection |
 
@@ -91,7 +90,6 @@ MIT – use it, remix it, build something cool.
 - Calibration via menu
 - Battery status overlay
 - Bluetooth or Wi-Fi weight broadcasting
-- Logging to SD
 
 ---
 
