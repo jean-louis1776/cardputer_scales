@@ -8,6 +8,7 @@
 // ===============================
 
 #include <M5Cardputer.h>
+#include <M5Unified.h>
 #include <HX711.h>
 #include <SD.h>
 #include <ArduinoJson.h>
@@ -123,7 +124,7 @@ void drawWeight() {
   M5Cardputer.Display.setTextSize(1);
   M5Cardputer.Display.setTextColor(0x8410);
   M5Cardputer.Display.setCursor(10, M5Cardputer.Display.height() - 12);
-  M5Cardputer.Display.print("R - tare");
+  M5Cardputer.Display.print("G0 - tare");
 
   M5Cardputer.Display.setCursor(100, M5Cardputer.Display.height() - 12);
   M5Cardputer.Display.print("S - settings");
@@ -172,11 +173,19 @@ void drawSDWarning() {
 // Функция: загрузка конфигурации
 void loadConfig() {
   File file = SD.open("/ScalesByILALEX/config.json");
-  if (!file) return;
+  if (!file) {
+    Serial.println("Не удалось открыть config.json");
+    return;
+  }
 
   StaticJsonDocument<256> doc;
   DeserializationError err = deserializeJson(doc, file);
-  if (err) return;
+  if (err) {
+    Serial.print("Ошибка чтения JSON: ");
+    Serial.println(err.c_str());
+    file.close(); // Закрыть даже при ошибке
+    return;
+  }
 
   String savedUnit = doc["unit"] | "g";
   if (savedUnit == "g")       { unit = "g";  scaleFactor = 1.0f; }
@@ -202,18 +211,26 @@ void saveConfig() {
 
 // Стартовая инициализация
 void setup() {
+  Serial.begin(115200);
+  delay(100); // важно на старте
+
+  Serial.println("Инициализация...");
+
   M5Cardputer.begin();
   M5Cardputer.Display.setRotation(1);
-
   M5Cardputer.Speaker.begin();
   M5Cardputer.Speaker.setVolume(128);
 
-  // Инициализация SD
+  Serial.println("Пробуем SD...");
   if (SD.begin()) {
+    Serial.println("SD-карта найдена");
     sdReady = true;
     loadConfig();
+  } else {
+    Serial.println("SD-карта не найдена!");
   }
 
+  Serial.println("Инициализация весов...");
   scale.begin(DOUT, CLK);
   scale.set_scale(2280.f);
   scale.tare();
@@ -267,8 +284,11 @@ void loop() {
       drawWeight();
     }
 
+    // Обработка клавиатуры
     if (M5Cardputer.Keyboard.isPressed()) {
       auto ks = M5Cardputer.Keyboard.keysState();
+
+      // Проверка ENTER на клавиатуре
       if (ks.enter) {
         if (!sdReady) {
           showSDWarning = true;
@@ -278,33 +298,39 @@ void loop() {
           selectedOption = 0;
           drawMenu();
         }
-      } else {
-        for (char c : ks.word) {
-          if (c == 'r') {
-            scale.tare();
-            actualWeight = displayedWeight = 0;
-          }
-        }
       }
     }
+
+    // Обработка кнопки G0 (слева под экраном)
+    if (M5Cardputer.BtnA.wasPressed()) {
+      scale.tare();
+      actualWeight = displayedWeight = 0;
+    }
+
   } else {
+    // Мы находимся в меню настроек
     if (M5Cardputer.Keyboard.isPressed()) {
       auto ks = M5Cardputer.Keyboard.keysState();
+
+      // Обработка стрелок вверх/вниз
       for (char c : ks.word) {
-        if (c == '\xB1') { // стрелка вверх
+        if (c == '\xB1') { // Стрелка вверх
           selectedOption = (selectedOption - 1 + optionsCount) % optionsCount;
           drawMenu();
-        } else if (c == '\xB2') { // стрелка вниз
+        } else if (c == '\xB2') { // Стрелка вниз
           selectedOption = (selectedOption + 1) % optionsCount;
           drawMenu();
         }
       }
+
+      // Подтверждение выбора через Enter
       if (ks.enter) {
         switch (selectedOption) {
           case 0: unit = "g";  scaleFactor = 1.0f; break;
           case 1: unit = "oz"; scaleFactor = 0.035274f; break;
           case 2: unit = "lb"; scaleFactor = 0.00220462f; break;
         }
+
         saveConfig();
         inMenu = false;
         drawWeight();
